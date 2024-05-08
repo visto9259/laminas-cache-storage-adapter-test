@@ -7,6 +7,22 @@
             "job": {
                 "command": "composer require laminas/laminas-cache-storage-adapter-apcu laminas/laminas-cache-storage-adapter-memory && ./vendor/bin/phpunit --testsuite 'Laminas Cache Integration Tests'",
                 "php": "*",
+                "dependencies": "lowest"
+            }
+        },
+        {
+            "name": "Integration tests",
+            "job": {
+                "command": "composer require laminas/laminas-cache-storage-adapter-apcu laminas/laminas-cache-storage-adapter-memory && ./vendor/bin/phpunit --testsuite 'Laminas Cache Integration Tests'",
+                "php": "*",
+                "dependencies": "latest"
+            }
+        },
+        {
+            "name": "Integration tests",
+            "job": {
+                "command": "composer require laminas/laminas-cache-storage-adapter-apcu laminas/laminas-cache-storage-adapter-memory && ./vendor/bin/phpunit --testsuite 'Laminas Cache Integration Tests'",
+                "php": "@lowest",
                 "dependencies": "locked"
             }
         }
