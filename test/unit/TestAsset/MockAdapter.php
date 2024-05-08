@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 namespace LaminasTestTest\Cache\Storage\Adapter\TestAsset;
 
-use Laminas\Cache\Storage\Adapter\AbstractAdapter;
+use Laminas\Cache\Storage\AbstractMetadataCapableAdapter;
 use Laminas\Cache\Storage\Adapter\AdapterOptions;
 
 /**
- * @property AdapterOptions $options
+ * @template-extends AbstractMetadataCapableAdapter<AdapterOptions,MockAdapterMetadata>
  */
-final class MockAdapter extends AbstractAdapter
+final class MockAdapter extends AbstractMetadataCapableAdapter
 {
-    /** @var array<mixed, mixed> */
-    private $data = [];
+    /** @var array<string, mixed> */
+    private array $data = [];
 
-    /**
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingAnyTypeHint
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingAnyTypeHint
-     */
-    protected function internalGetItem(&$normalizedKey, &$success = null, &$casToken = null)
-    {
+    protected function internalGetItem(
+        string $normalizedKey,
+        bool|null &$success = null,
+        mixed &$casToken = null
+    ): mixed {
         $ns      = $this->options->getNamespace();
         $success = isset($this->data[$ns][$normalizedKey]) && $this->options->getReadable();
 
@@ -31,11 +30,7 @@ final class MockAdapter extends AbstractAdapter
         return $casToken = $this->data[$ns][$normalizedKey];
     }
 
-    /**
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingAnyTypeHint
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingAnyTypeHint
-     */
-    protected function internalSetItem(&$normalizedKey, &$value)
+    protected function internalSetItem(string $normalizedKey, mixed $value): bool
     {
         $ns                              = $this->options->getNamespace();
         $this->data[$ns][$normalizedKey] = $value;
@@ -43,11 +38,7 @@ final class MockAdapter extends AbstractAdapter
         return true;
     }
 
-    /**
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingAnyTypeHint
-     * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingAnyTypeHint
-     */
-    protected function internalRemoveItem(&$normalizedKey)
+    protected function internalRemoveItem(string $normalizedKey): bool
     {
         $ns = $this->options->getNamespace();
         if (! isset($this->data[$ns][$normalizedKey])) {
@@ -57,5 +48,16 @@ final class MockAdapter extends AbstractAdapter
         unset($this->data[$ns][$normalizedKey]);
 
         return true;
+    }
+
+    protected function internalGetMetadata(string $normalizedKey): ?object
+    {
+        $ns = $this->options->getNamespace();
+
+        if (! isset($this->data[$ns][$normalizedKey])) {
+            return null;
+        }
+
+        return new MockAdapterMetadata();
     }
 }

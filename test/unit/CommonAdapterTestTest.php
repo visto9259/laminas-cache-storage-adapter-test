@@ -21,14 +21,6 @@ final class CommonAdapterTestTest extends AbstractCommonAdapterTest
         parent::setUp();
     }
 
-    /**
-     * @return array
-     */
-    public function getCommonAdapterNamesProvider()
-    {
-        return [];
-    }
-
     public function testCanStoreValuesWithCacheKeysUpToTheMaximumKeyLengthLimit(): void
     {
         self::markTestSkipped();

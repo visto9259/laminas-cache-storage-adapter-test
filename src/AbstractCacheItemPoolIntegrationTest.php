@@ -13,14 +13,12 @@ use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Cache\InvalidArgumentException;
 use stdClass;
-use Traversable;
 
 use function chr;
 use function count;
 use function date_default_timezone_get;
 use function date_default_timezone_set;
 use function gc_collect_cycles;
-use function get_class;
 use function in_array;
 use function is_array;
 use function is_bool;
@@ -35,6 +33,7 @@ use function time;
 
 abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
 {
+    /** @var non-empty-string|null */
     private ?string $tz = null;
 
     private ?StorageInterface $storage = null;
@@ -59,7 +58,7 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
 
     protected function tearDown(): void
     {
-        if ($this->tz) {
+        if ($this->tz !== null) {
             date_default_timezone_set($this->tz);
         }
 
@@ -72,12 +71,6 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
         }
 
         parent::tearDown();
-    }
-
-    /** @psalm-return class-string<StorageInterface> */
-    protected function getStorageAdapterClassName(): string
-    {
-        return get_class($this->createStorage());
     }
 
     abstract protected function createStorage(): StorageInterface;
@@ -261,11 +254,6 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
         }
 
         $items = $this->cache->getItems([]);
-        self::assertTrue(
-            is_array($items) || $items instanceof Traversable,
-            'A call to getItems with an empty array must always return an array or \Traversable.'
-        );
-
         $count = count(is_array($items) ? $items : iterator_to_array($items));
 
         self::assertSame(0, $count);

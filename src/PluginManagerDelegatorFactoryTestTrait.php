@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace LaminasTest\Cache\Storage\Adapter;
 
-use Interop\Container\ContainerInterface;
 use Laminas\Cache\Storage\AdapterPluginManager;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 
 /**
  * @see TestCase
@@ -48,7 +48,7 @@ trait PluginManagerDelegatorFactoryTestTrait
                 return new AdapterPluginManager($container);
             }
         );
-        $this->assertTrue(
+        self::assertTrue(
             $pluginManager->has($commonAdapterName),
             "Storage adapter name '{$commonAdapterName}' not found in storage adapter plugin manager"
         );

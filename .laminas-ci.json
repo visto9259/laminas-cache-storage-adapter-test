@@ -1,7 +1,14 @@
 {
     "extensions": ["apcu"],
     "ini": ["apc.enabled=1", "apc.enable_cli=1"],
-    "ignore_php_platform_requirements": {
-      "8.3": true
-    }
+    "additional_checks": [
+        {
+            "name": "Integration tests",
+            "job": {
+                "command": "composer require laminas/laminas-cache-storage-adapter-apcu laminas/laminas-cache-storage-adapter-memory && ./vendor/bin/phpunit --testsuite 'Laminas Cache Integration Tests'",
+                "php": "*",
+                "dependencies": "locked"
+            }
+        }
+    ]
 }

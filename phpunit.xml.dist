@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true" defaultTestSuite="Laminas Cache Tests">
   <coverage processUncoveredFiles="true">
     <include>
       <directory suffix=".php">./src</directory>
     </include>
   </coverage>
   <testsuites>
-    <testsuite name="Laminas ZendFrameworkBridge Tests">
-      <directory>./src</directory>
-      <directory>./test</directory>
+    <testsuite name="Laminas Cache Tests">
+      <directory>./test/unit</directory>
+    </testsuite>
+    <testsuite name="Laminas Cache Integration Tests">
+      <directory>./test/integration</directory>
     </testsuite>
   </testsuites>
 </phpunit>
