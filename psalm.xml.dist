@@ -5,6 +5,11 @@
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
     findUnusedPsalmSuppress="true"
+    findUnusedVariablesAndParams="true"
+    findUnusedCode="true"
+    findUnusedBaselineEntry="true"
+    ignoreInternalFunctionNullReturn="false"
+    ignoreInternalFunctionFalseReturn="false"
 >
     <projectFiles>
         <directory name="src"/>

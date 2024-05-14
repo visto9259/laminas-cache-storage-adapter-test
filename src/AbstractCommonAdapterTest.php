@@ -6,6 +6,7 @@ namespace LaminasTest\Cache\Storage\Adapter;
 
 use Laminas\Cache\Exception\InvalidArgumentException;
 use Laminas\Cache\Storage\Adapter\AdapterOptions;
+use Laminas\Cache\Storage\Adapter\KeyListIterator;
 use Laminas\Cache\Storage\AvailableSpaceCapableInterface;
 use Laminas\Cache\Storage\Capabilities;
 use Laminas\Cache\Storage\ClearByNamespaceInterface;
@@ -14,6 +15,7 @@ use Laminas\Cache\Storage\ClearExpiredInterface;
 use Laminas\Cache\Storage\FlushableInterface;
 use Laminas\Cache\Storage\IterableInterface;
 use Laminas\Cache\Storage\IteratorInterface;
+use Laminas\Cache\Storage\MetadataCapableInterface;
 use Laminas\Cache\Storage\OptimizableInterface;
 use Laminas\Cache\Storage\StorageInterface;
 use Laminas\Cache\Storage\TaggableInterface;
@@ -46,24 +48,18 @@ use function usleep;
  */
 abstract class AbstractCommonAdapterTest extends TestCase
 {
-    /**
-     * @var StorageInterface
-     * @psalm-var TStorage
-     */
-    protected $storage;
+    /** @var TStorage */
+    protected StorageInterface $storage;
 
-    /**
-     * @var AdapterOptions
-     * @psalm-var TOptions
-     */
-    protected $options;
+    /** @var TOptions */
+    protected AdapterOptions $options;
 
     /**
      * All datatypes of PHP
      *
      * @var list<non-empty-string>
      */
-    protected $phpDatatypes = [
+    protected array $phpDatatypes = [
         'NULL',
         'boolean',
         'integer',
@@ -73,20 +69,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
         'object',
         'resource',
     ];
-
-    protected function setUp(): void
-    {
-        self::assertInstanceOf(
-            StorageInterface::class,
-            $this->storage,
-            'Storage adapter instance is needed for tests'
-        );
-        self::assertInstanceOf(
-            AdapterOptions::class,
-            $this->options,
-            'Options instance is needed for tests'
-        );
-    }
 
     protected function tearDown(): void
     {
@@ -106,7 +88,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $options = $this->storage->getOptions()->toArray();
 
         foreach (array_keys($options) as $name) {
-            self::assertIsString($name);
             self::assertMatchesRegularExpression(
                 '/^[a-z]+[a-z0-9_]*[a-z0-9]+$/',
                 $name,
@@ -119,7 +100,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
     {
         $options = $this->storage->getOptions();
         foreach (array_keys($options->toArray()) as $option) {
-            self::assertIsString($option);
             if ($option === 'adapter') {
                 // Skip this, as it's a "special" value
                 continue;
@@ -152,7 +132,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $options = $this->storage->getOptions();
         /** @psalm-suppress MixedAssignment */
         foreach ($options->toArray() as $option => $value) {
-            self::assertIsString($option);
             $method = ucwords(str_replace('_', ' ', $option));
             $method = 'set' . str_replace(' ', '', $method);
             self::assertSame(
@@ -195,19 +174,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
             } else {
                 self::assertIsBool($targetType);
             }
-        }
-    }
-
-    public function testSupportedMetadataCapability(): void
-    {
-        $capabilities = $this->storage->getCapabilities();
-        $metadata     = $capabilities->getSupportedMetadata();
-        if ($metadata === []) {
-            self::markTestSkipped('Adapter does not support any metadata.');
-        }
-
-        foreach ($metadata as $property) {
-            self::assertIsString($property);
         }
     }
 
@@ -385,38 +351,40 @@ abstract class AbstractCommonAdapterTest extends TestCase
 
     public function testGetMetadata(): void
     {
-        $capabilities       = $this->storage->getCapabilities();
-        $supportedMetadatas = $capabilities->getSupportedMetadata();
+        if (! $this->storage instanceof MetadataCapableInterface) {
+            $this->markTestSkipped("Storage doesn't implement MetadataCapableInterface");
+        }
 
         self::assertTrue($this->storage->setItem('key', 'value'));
         $metadata = $this->storage->getMetadata('key');
 
-        self::assertIsArray($metadata);
-        /** @psalm-suppress MixedAssignment */
-        foreach ($supportedMetadatas as $supportedMetadata) {
-            self::assertIsString($supportedMetadata);
-            self::assertArrayHasKey($supportedMetadata, $metadata);
+        self::assertNotNull($metadata);
+    }
+
+    public function testGetMetadataReturnsNullOnMissingItem(): void
+    {
+        if (! $this->storage instanceof MetadataCapableInterface) {
+            $this->markTestSkipped("Storage doesn't implement MetadataCapableInterface");
         }
+        self::assertNull($this->storage->getMetadata('unknown'));
     }
 
-    public function testGetMetadataReturnsFalseOnMissingItem(): void
+    public function testGetMetadataReturnsNullIfNonReadable(): void
     {
-        self::assertFalse($this->storage->getMetadata('unknown'));
-    }
-
-    public function testGetMetadataReturnsFalseIfNonReadable(): void
-    {
+        if (! $this->storage instanceof MetadataCapableInterface) {
+            $this->markTestSkipped("Storage doesn't implement MetadataCapableInterface");
+        }
         $this->options->setReadable(false);
 
         self::assertTrue($this->storage->setItem('key', 'value'));
-        self::assertFalse($this->storage->getMetadata('key'));
+        self::assertNull($this->storage->getMetadata('key'));
     }
 
     public function testGetMetadatas(): void
     {
-        $capabilities       = $this->storage->getCapabilities();
-        $supportedMetadatas = $capabilities->getSupportedMetadata();
-
+        if (! $this->storage instanceof MetadataCapableInterface) {
+            $this->markTestSkipped("Storage doesn't implement MetadataCapableInterface");
+        }
         $items = [
             'key1' => 'value1',
             'key2' => 'value2',
@@ -425,14 +393,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
 
         $metadatas = $this->storage->getMetadatas(array_keys($items));
         self::assertSame(count($items), count($metadatas));
-        foreach ($metadatas as $metadata) {
-            self::assertIsArray($metadata);
-            /** @psalm-suppress MixedAssignment */
-            foreach ($supportedMetadatas as $supportedMetadata) {
-                self::assertIsString($supportedMetadata);
-                self::assertArrayHasKey($supportedMetadata, $metadata);
-            }
-        }
     }
 
     /**
@@ -447,6 +407,9 @@ abstract class AbstractCommonAdapterTest extends TestCase
 
     public function testGetMetadatasReturnsEmptyArrayIfNonReadable(): void
     {
+        if (! $this->storage instanceof MetadataCapableInterface) {
+            $this->markTestSkipped("Storage doesn't implement MetadataCapableInterface");
+        }
         $this->options->setReadable(false);
 
         self::assertTrue($this->storage->setItem('key', 'value'));
@@ -861,128 +824,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertEquals('newValue', $this->storage->getItem('key'));
     }
 
-    public function testIncrementItem(): void
-    {
-        self::assertTrue($this->storage->setItem('counter', 10));
-        self::assertEquals(15, $this->storage->incrementItem('counter', 5));
-        self::assertEquals(15, $this->storage->getItem('counter'));
-    }
-
-    public function testIncrementItemInitialValue(): void
-    {
-        self::assertEquals(5, $this->storage->incrementItem('counter', 5));
-        self::assertEquals(5, $this->storage->getItem('counter'));
-    }
-
-    public function testIncrementItemReturnsFalseIfNonWritable(): void
-    {
-        $this->storage->setItem('key', 10);
-        $this->options->setWritable(false);
-
-        self::assertFalse($this->storage->incrementItem('key', 5));
-        self::assertEquals(10, $this->storage->getItem('key'));
-    }
-
-    /**
-     * @link https://github.com/zendframework/zend-cache/issues/66
-     */
-    public function testSetAndIncrementItems(): void
-    {
-        $this->storage->setItems([
-            'key1' => 10,
-            'key2' => 11,
-        ]);
-
-        $result = $this->storage->incrementItems([
-            'key1' => 10,
-            'key2' => 20,
-        ]);
-        ksort($result);
-
-        self::assertSame([
-            'key1' => 20,
-            'key2' => 31,
-        ], $result);
-    }
-
-    public function testIncrementItemsReturnsKeyValuePairsOfWrittenItems(): void
-    {
-        self::assertTrue($this->storage->setItem('key1', 10));
-
-        $result = $this->storage->incrementItems([
-            'key1' => 10,
-            'key2' => 10,
-        ]);
-        ksort($result);
-
-        self::assertSame([
-            'key1' => 20,
-            'key2' => 10,
-        ], $result);
-    }
-
-    public function testIncrementItemsReturnsEmptyArrayIfNonWritable(): void
-    {
-        $this->storage->setItem('key', 10);
-        $this->options->setWritable(false);
-
-        self::assertSame([], $this->storage->incrementItems(['key' => 5]));
-        self::assertEquals(10, $this->storage->getItem('key'));
-    }
-
-    public function testDecrementItem(): void
-    {
-        self::assertTrue($this->storage->setItem('counter', 30));
-        self::assertEquals(25, $this->storage->decrementItem('counter', 5));
-        self::assertEquals(25, $this->storage->getItem('counter'));
-    }
-
-    public function testDecrementItemInitialValue(): void
-    {
-        self::assertEquals(-5, $this->storage->decrementItem('counter', 5));
-        self::assertEquals(-5, $this->storage->getItem('counter'));
-    }
-
-    public function testDecrementItemReturnsFalseIfNonWritable(): void
-    {
-        $this->storage->setItem('key', 10);
-        $this->options->setWritable(false);
-
-        self::assertFalse($this->storage->decrementItem('key', 5));
-        self::assertEquals(10, $this->storage->getItem('key'));
-    }
-
-    /**
-     * @link https://github.com/zendframework/zend-cache/issues/66
-     */
-    public function testSetAndDecrementItems(): void
-    {
-        $this->storage->setItems([
-            'key1' => 10,
-            'key2' => 11,
-        ]);
-
-        $result = $this->storage->decrementItems([
-            'key1' => 10,
-            'key2' => 5,
-        ]);
-        ksort($result);
-
-        self::assertSame([
-            'key1' => 0,
-            'key2' => 6,
-        ], $result);
-    }
-
-    public function testDecrementItemsReturnsEmptyArrayIfNonWritable(): void
-    {
-        $this->storage->setItem('key', 10);
-        $this->options->setWritable(false);
-
-        self::assertSame([], $this->storage->decrementItems(['key' => 5]));
-        self::assertEquals(10, $this->storage->getItem('key'));
-    }
-
     public function testTouchItem(): void
     {
         $capabilities = $this->storage->getCapabilities();
@@ -1056,20 +897,17 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertSame([], $this->storage->setItems($items));
 
         // check iterator aggregate
-        $iterator = $this->storage->getIterator();
+        $iterator = new KeyListIterator($this->storage, array_keys($items));
         self::assertInstanceOf(IteratorInterface::class, $iterator);
         self::assertSame(IteratorInterface::CURRENT_AS_KEY, $iterator->getMode());
 
         // check mode CURRENT_AS_KEY
-        $iterator = $this->storage->getIterator();
-        self::assertInstanceOf(IteratorInterface::class, $iterator);
         $iterator->setMode(IteratorInterface::CURRENT_AS_KEY);
         $keys = iterator_to_array($iterator, false);
         sort($keys);
         self::assertSame(array_keys($items), $keys);
 
         // check mode CURRENT_AS_VALUE
-        $iterator = $this->storage->getIterator();
         self::assertInstanceOf(IteratorInterface::class, $iterator);
         $iterator->setMode(IteratorInterface::CURRENT_AS_VALUE);
         $result = iterator_to_array($iterator, true);

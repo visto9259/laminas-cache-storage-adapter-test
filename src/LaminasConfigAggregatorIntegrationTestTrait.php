@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace LaminasTest\Cache\Storage\Adapter;
 
-use Interop\Container\ContainerInterface;
 use Laminas\Cache\Storage\AdapterPluginManager;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 
 use function class_exists;
 use function reset;

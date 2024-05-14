@@ -18,7 +18,6 @@ use function array_merge;
 use function chr;
 use function date_default_timezone_get;
 use function date_default_timezone_set;
-use function get_class;
 use function is_array;
 use function is_bool;
 use function is_float;
@@ -31,6 +30,7 @@ use function str_repeat;
 
 abstract class AbstractSimpleCacheIntegrationTest extends TestCase
 {
+    /** @var non-empty-string|null */
     private ?string $tz = null;
 
     private ?StorageInterface $storage = null;
@@ -56,7 +56,7 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        if ($this->tz) {
+        if ($this->tz !== null) {
             date_default_timezone_set($this->tz);
         }
 
@@ -64,12 +64,6 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
             $this->storage->flush();
             $this->cache->clear();
         }
-    }
-
-    /** @psalm-return class-string<StorageInterface> */
-    protected function getStorageAdapterClassName(): string
-    {
-        return get_class($this->createStorage());
     }
 
     abstract protected function createStorage(): StorageInterface;

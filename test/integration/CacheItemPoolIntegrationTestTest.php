@@ -19,8 +19,19 @@ final class CacheItemPoolIntegrationTestTest extends AbstractCacheItemPoolIntegr
         parent::setUp();
     }
 
+    /**
+     * @psalm-suppress InvalidReturnType Due to recursive dependencies, we can not have APCu installed as during
+     *                                   development. Will be installed during CI via `.laminas-ci.json`.
+     */
     protected function createStorage(): StorageInterface
     {
+        /**
+         * @psalm-suppress UndefinedClass Due to recursive dependencies, we can not have APCu installed as during
+         *                                development. Will be installed during CI via `.laminas-ci.json`.
+         * @psalm-suppress InvalidReturnStatement Due to recursive dependencies, we can not have APCu installed as
+         *                                        during development. Will be installed during CI via
+         *                                        `.laminas-ci.json`.
+         */
         return new Apcu();
     }
 }

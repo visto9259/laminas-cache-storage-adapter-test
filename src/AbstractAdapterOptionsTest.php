@@ -19,14 +19,10 @@ use function func_get_args;
  */
 abstract class AbstractAdapterOptionsTest extends TestCase
 {
-    /**
-     * @var AdapterOptions
-     * @psalm-var TOptions
-     */
-    protected $options;
+    /** @var TOptions */
+    protected AdapterOptions $options;
 
-    /** @var string */
-    protected $keyPattern = '';
+    protected string $keyPattern = '';
 
     protected function setUp(): void
     {
@@ -154,7 +150,6 @@ abstract class AbstractAdapterOptionsTest extends TestCase
         // set key_pattern and namespace to be a prioritized options
         $optionsRef = new ReflectionObject($options);
         $propRef    = $optionsRef->getProperty('__prioritizedProperties__');
-        $propRef->setAccessible(true);
         $propRef->setValue($options, ['key_pattern', 'namespace']);
 
         // expected order of setter be called
