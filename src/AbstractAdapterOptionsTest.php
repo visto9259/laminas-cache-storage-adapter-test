@@ -6,7 +6,6 @@ namespace LaminasTest\Cache\Storage\Adapter;
 
 use ArrayObject;
 use Laminas\Cache\Exception;
-use Laminas\Cache\Storage\Adapter\AbstractAdapter;
 use Laminas\Cache\Storage\Adapter\AdapterOptions;
 use Laminas\Cache\Storage\Event;
 use PHPUnit\Framework\TestCase;
@@ -110,7 +109,7 @@ abstract class AbstractAdapterOptionsTest extends TestCase
     public function testTriggerOptionEvent(): void
     {
         // setup an adapter implements EventsCapableInterface
-        $adapter = $this->getMockForAbstractClass(AbstractAdapter::class);
+        $adapter = new NoopAdapterTestAsset();
         $this->options->setAdapter($adapter);
 
         // setup event listener

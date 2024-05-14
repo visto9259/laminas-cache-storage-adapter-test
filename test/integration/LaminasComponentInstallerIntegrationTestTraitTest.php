@@ -10,14 +10,15 @@ use PHPUnit\Framework\TestCase;
 
 final class LaminasComponentInstallerIntegrationTestTraitTest extends TestCase
 {
-    /** @var LaminasComponentInstallerIntegrationTestTraitImplementation */
-    private $implementation;
+    private LaminasComponentInstallerIntegrationTestTraitImplementation $implementation;
 
     protected function setUp(): void
     {
         parent::setUp();
         /** @psalm-suppress InternalMethod */
-        $this->implementation = new LaminasComponentInstallerIntegrationTestTraitImplementation();
+        $this->implementation = new LaminasComponentInstallerIntegrationTestTraitImplementation(
+            LaminasComponentInstallerIntegrationTestTraitImplementation::class,
+        );
     }
 
     public function testCanParseComposerJson(): void
