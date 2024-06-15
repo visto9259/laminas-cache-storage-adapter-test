@@ -25,7 +25,6 @@ use PHPUnit\Framework\TestCase;
 use stdClass;
 
 use function array_keys;
-use function array_merge;
 use function assert;
 use function bin2hex;
 use function count;
@@ -148,16 +147,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         );
     }
 
-    public function testGetCapabilities(): void
+    public function testDataTypesCapability(): void
     {
         $capabilities = $this->storage->getCapabilities();
-        self::assertInstanceOf(Capabilities::class, $capabilities);
-    }
-
-    public function testDatatypesCapability(): void
-    {
-        $capabilities = $this->storage->getCapabilities();
-        $datatypes    = $capabilities->getSupportedDatatypes();
+        $datatypes    = $capabilities->supportedDataTypes;
 
         foreach ($datatypes as $sourceType => $targetType) {
             self::assertContains(
@@ -171,8 +164,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
                     $this->phpDatatypes,
                     "Unknown target type '{$targetType}'"
                 );
-            } else {
-                self::assertIsBool($targetType);
             }
         }
     }
@@ -181,27 +172,13 @@ abstract class AbstractCommonAdapterTest extends TestCase
     {
         $capabilities = $this->storage->getCapabilities();
 
-        self::assertIsInt($capabilities->getMaxTtl());
-        self::assertGreaterThanOrEqual(0, $capabilities->getMaxTtl());
-
-        self::assertIsBool($capabilities->getStaticTtl());
-
-        self::assertIsNumeric($capabilities->getTtlPrecision());
-        self::assertGreaterThan(0, $capabilities->getTtlPrecision());
-
-        self::assertIsInt($capabilities->getLockOnExpire());
+        self::assertGreaterThan(0, $capabilities->ttlPrecision);
     }
 
     public function testKeyCapabilities(): void
     {
         $capabilities = $this->storage->getCapabilities();
-
-        self::assertIsInt($capabilities->getMaxKeyLength());
-        self::assertGreaterThanOrEqual(-1, $capabilities->getMaxKeyLength());
-
-        self::assertIsBool($capabilities->getNamespaceIsPrefix());
-
-        self::assertIsString($capabilities->getNamespaceSeparator());
+        self::assertGreaterThanOrEqual(-1, $capabilities->maxKeyLength);
     }
 
     public function testHasItemReturnsTrueOnValidItem(): void
@@ -219,11 +196,11 @@ abstract class AbstractCommonAdapterTest extends TestCase
     {
         $capabilities = $this->storage->getCapabilities();
 
-        if ($capabilities->getMinTtl() === 0) {
+        if ($capabilities->ttlSupported === false) {
             $this->markTestSkipped("Adapter doesn't support item expiration");
         }
 
-        $ttl = $capabilities->getTtlPrecision();
+        $ttl = $capabilities->ttlPrecision;
         $this->options->setTtl($ttl);
 
         $this->waitForFullSecond();
@@ -231,12 +208,12 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertTrue($this->storage->setItem('key', 'value'));
 
         // wait until the item expired
-        $wait = (int) ($ttl + $capabilities->getTtlPrecision() * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
         usleep($wait);
 
-        if (! $capabilities->getUseRequestTime()) {
+        if (! $capabilities->usesRequestTime) {
             self::assertFalse($this->storage->hasItem('key'));
         } else {
             self::assertTrue($this->storage->hasItem('key'));
@@ -294,15 +271,15 @@ abstract class AbstractCommonAdapterTest extends TestCase
     {
         $capabilities = $this->storage->getCapabilities();
 
-        if ($capabilities->getMinTtl() === 0) {
+        if ($capabilities->ttlSupported === false) {
             $this->markTestSkipped("Adapter doesn't support item expiration");
         }
 
-        if ($capabilities->getUseRequestTime()) {
+        if ($capabilities->usesRequestTime) {
             $this->markTestSkipped("Can't test get expired item if request time will be used");
         }
 
-        $ttl = $capabilities->getTtlPrecision();
+        $ttl = $capabilities->ttlPrecision;
         $this->options->setTtl($ttl);
 
         $this->waitForFullSecond();
@@ -310,7 +287,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $this->storage->setItem('key', 'value');
 
         // wait until expired
-        $wait = (int) ($ttl + $capabilities->getTtlPrecision() * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
         usleep($wait);
@@ -548,11 +525,11 @@ abstract class AbstractCommonAdapterTest extends TestCase
     {
         $capabilities = $this->storage->getCapabilities();
 
-        if ($capabilities->getMinTtl() === 0) {
+        if ($capabilities->ttlSupported === false) {
             $this->markTestSkipped("Adapter doesn't support item expiration");
         }
 
-        $ttl = $capabilities->getTtlPrecision();
+        $ttl = $capabilities->ttlPrecision;
         $this->options->setTtl($ttl);
 
         $this->waitForFullSecond();
@@ -560,31 +537,25 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $this->storage->setItem('key', 'value');
 
         // wait until expired
-        $wait = (int) ($ttl + $capabilities->getTtlPrecision() * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
         usleep($wait);
 
-        if ($capabilities->getUseRequestTime()) {
+        if ($capabilities->usesRequestTime) {
             // Can't test much more if the request time will be used
             self::assertEquals('value', $this->storage->getItem('key'));
             return;
         }
 
         self::assertNull($this->storage->getItem('key'));
-
-        if ($capabilities->getLockOnExpire()) {
-            self::assertEquals('value', $this->storage->getItem('key'));
-        } else {
-            self::assertNull($this->storage->getItem('key'));
-        }
     }
 
     public function testSetAndGetExpiredItems(): void
     {
         $capabilities = $this->storage->getCapabilities();
 
-        if ($capabilities->getMinTtl() === 0) {
+        if ($capabilities->ttlSupported === false) {
             $this->markTestSkipped("Adapter doesn't support item expiration");
         }
 
@@ -606,13 +577,13 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertSame([], $this->storage->setItems($itemsHigh));
 
         // set items with low TTL
-        $ttl = $capabilities->getTtlPrecision();
+        $ttl = $capabilities->ttlPrecision;
         $this->options->setTtl($ttl);
         $this->waitForFullSecond();
         self::assertSame([], $this->storage->setItems($itemsLow));
 
         // wait until expired
-        $wait = (int) ($ttl + $capabilities->getTtlPrecision() * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
         usleep($wait);
@@ -620,18 +591,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $rs = $this->storage->getItems(array_keys($items));
         ksort($rs); // make comparable
 
-        if (! $capabilities->getStaticTtl()) {
-            // if item expiration will be done on read there is no difference
-            // between the previos set items in TTL.
-            // -> all items will be expired
-            self::assertEquals([], $rs);
-
-            // after disabling TTL all items will be available
-            $this->options->setTtl(0);
-            $rs = $this->storage->getItems(array_keys($items));
-            ksort($rs); // make comparable
-            self::assertEquals($items, $rs);
-        } elseif ($capabilities->getUseRequestTime()) {
+        if ($capabilities->usesRequestTime) {
             // if the request time will be used as current time all items will
             // be available as expiration doesn't work within the same process
             self::assertEquals($items, $rs);
@@ -642,13 +602,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
             // if 'lock-on-expire' is supported the low items could be retrieved
             $rs = $this->storage->getItems(array_keys($items));
             ksort($rs); // make comparable
-            if (! $capabilities->getLockOnExpire()) {
-                self::assertEquals($itemsHigh, $rs);
-            } else {
-                $itemsExpected = array_merge($itemsLow, $itemsHigh);
-                ksort($itemsExpected); // make comparable
-                self::assertEquals($itemsExpected, $rs);
-            }
+            self::assertEquals($itemsHigh, $rs);
         }
     }
 
@@ -676,7 +630,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
          * @var string $sourceType
          * @var mixed $targetType
          */
-        foreach ($capabilities->getSupportedDatatypes() as $sourceType => $targetType) {
+        foreach ($capabilities->supportedDataTypes as $sourceType => $targetType) {
             if ($targetType === false) {
                 continue;
             }
@@ -687,8 +641,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
             if ($targetType === true) {
                 self::assertSame($value, $this->storage->getItem('key'));
             } elseif (is_string($targetType)) {
-//                $typeval = $targetType . 'val';
-//                $typeval($value);
                 self::assertEquals($value, $this->storage->getItem('key'));
             }
         }
@@ -740,11 +692,11 @@ abstract class AbstractCommonAdapterTest extends TestCase
     {
         $capabilities = $this->storage->getCapabilities();
 
-        if ($capabilities->getMinTtl() === 0) {
+        if ($capabilities->ttlSupported === false) {
             $this->markTestSkipped("Adapter doesn't support item expiration");
         }
 
-        $ttl = $capabilities->getTtlPrecision();
+        $ttl = $capabilities->ttlPrecision;
         $this->options->setTtl($ttl);
 
         $this->waitForFullSecond();
@@ -752,12 +704,12 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertTrue($this->storage->addItem('key', 'value'));
 
         // wait until the item expired
-        $wait = (int) ($ttl + $capabilities->getTtlPrecision() * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
         usleep($wait);
 
-        if (! $capabilities->getUseRequestTime()) {
+        if (! $capabilities->usesRequestTime) {
             self::assertFalse($this->storage->hasItem('key'));
         } else {
             self::assertTrue($this->storage->hasItem('key'));
@@ -828,14 +780,14 @@ abstract class AbstractCommonAdapterTest extends TestCase
     {
         $capabilities = $this->storage->getCapabilities();
 
-        if ($capabilities->getMinTtl() === 0) {
+        if ($capabilities->ttlSupported === false) {
             $this->markTestSkipped("Adapter doesn't support item expiration");
         }
 
-        $this->options->setTtl(2 * $capabilities->getTtlPrecision());
+        $this->options->setTtl(2 * $capabilities->ttlPrecision);
 
         $this->waitForFullSecond();
-        $waitInitial = (int) ($capabilities->getTtlPrecision() * 1000000);
+        $waitInitial = (int) ($capabilities->ttlPrecision * 1000000);
         self::assertGreaterThanOrEqual(0, $waitInitial);
         assert($waitInitial >= 0);
 
@@ -848,8 +800,8 @@ abstract class AbstractCommonAdapterTest extends TestCase
         usleep($waitInitial);
         self::assertTrue($this->storage->hasItem('key'));
 
-        if (! $capabilities->getUseRequestTime()) {
-            $waitExtended = (int) ($capabilities->getTtlPrecision() * 2000000);
+        if (! $capabilities->usesRequestTime) {
+            $waitExtended = (int) ($capabilities->ttlPrecision * 2000000);
             self::assertGreaterThanOrEqual(0, $waitExtended);
             assert($waitExtended >= 0);
             usleep($waitExtended);
@@ -1010,7 +962,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         }
 
         $capabilities = $this->storage->getCapabilities();
-        $ttl          = $capabilities->getTtlPrecision();
+        $ttl          = $capabilities->ttlPrecision;
         $this->options->setTtl($ttl);
 
         $this->waitForFullSecond();
@@ -1018,7 +970,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertTrue($this->storage->setItem('key1', 'value1'));
 
         // wait until the first item expired
-        $wait = (int) ($ttl + $capabilities->getTtlPrecision() * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
         usleep($wait);
@@ -1027,7 +979,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
 
         self::assertTrue($this->storage->clearExpired());
 
-        if ($capabilities->getUseRequestTime()) {
+        if ($capabilities->usesRequestTime) {
             self::assertTrue($this->storage->hasItem('key1'));
         } else {
             self::assertFalse($this->storage->hasItem('key1'));
@@ -1139,7 +1091,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
     public function testCanStoreValuesWithCacheKeysUpToTheMaximumKeyLengthLimit(): void
     {
         $capabilities     = $this->storage->getCapabilities();
-        $maximumKeyLength = $capabilities->getMaxKeyLength();
+        $maximumKeyLength = $capabilities->maxKeyLength;
         if ($maximumKeyLength > 1024) {
             self::markTestSkipped('Maximum cache key length is bigger than 1M.');
         } elseif ($maximumKeyLength === Capabilities::UNKNOWN_KEY_LENGTH) {
