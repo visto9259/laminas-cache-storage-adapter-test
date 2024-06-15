@@ -20,7 +20,7 @@ trait PluginManagerDelegatorFactoryTestTrait
      *
      * @psalm-return iterable<non-empty-string,array{0:non-empty-string}>
      */
-    abstract public function getCommonAdapterNamesProvider(): iterable;
+    abstract public static function getCommonAdapterNamesProvider(): iterable;
 
     /**
      * Should provide the provisioned plugin manager.
