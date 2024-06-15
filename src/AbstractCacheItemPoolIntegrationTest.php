@@ -31,6 +31,10 @@ use function sleep;
 use function str_repeat;
 use function time;
 
+/**
+ * NOTE: Most tests in here are imported from https://github.com/php-cache/integration-tests
+ *       cache/integration-tests is licensed with the MIT License.
+ */
 abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
 {
     /** @var non-empty-string|null */
@@ -89,11 +93,6 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
     public static function invalidKeys(): array
     {
         return [
-            [true],
-            [false],
-            [null],
-            [2],
-            [2.5],
             ['{str'],
             ['rand{'],
             ['rand{str'],
@@ -104,8 +103,6 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
             ['rand\\str'],
             ['rand@str'],
             ['rand:str'],
-            [new stdClass()],
-            [['array']],
         ];
     }
 
