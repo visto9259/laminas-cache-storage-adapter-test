@@ -1,6 +1,7 @@
 {
     "extensions": ["apcu"],
     "ini": ["apc.enabled=1", "apc.enable_cli=1"],
+    "backwardCompatibilityCheck": true,
     "additional_checks": [
         {
             "name": "Integration tests with memory adapter",

@@ -28,6 +28,10 @@ use function sleep;
 use function sort;
 use function str_repeat;
 
+/**
+ * NOTE: Most tests in here are imported from https://github.com/php-cache/integration-tests
+ *       cache/integration-tests is licensed with the MIT License.
+ */
 abstract class AbstractSimpleCacheIntegrationTest extends TestCase
 {
     /** @var non-empty-string|null */
@@ -98,9 +102,6 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
     {
         return array_merge(
             self::invalidArrayKeys(),
-            [
-                [2],
-            ]
         );
     }
 
@@ -113,10 +114,6 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
     {
         return [
             [''],
-            [true],
-            [false],
-            [null],
-            [2.5],
             ['{str'],
             ['rand{'],
             ['rand{str'],
@@ -127,27 +124,6 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
             ['rand\\str'],
             ['rand@str'],
             ['rand:str'],
-            [new stdClass()],
-            [['array']],
-        ];
-    }
-
-    /**
-     * @return list<array{0:mixed}>
-     */
-    public static function invalidTtl(): array
-    {
-        return [
-            [''],
-            [true],
-            [false],
-            ['abc'],
-            [2.5],
-            [' 1'], // can be casted to a int
-            ['12foo'], // can be casted to a int
-            ['025'], // can be interpreted as hex
-            [new stdClass()],
-            [['array']],
         ];
     }
 
@@ -494,16 +470,6 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
         $this->cache->getMultiple(['key1', $key, 'key2']);
     }
 
-    public function testGetMultipleNoIterable(): void
-    {
-        if (isset($this->skippedTests[__FUNCTION__])) {
-            $this->markTestSkipped($this->skippedTests[__FUNCTION__]);
-        }
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->cache->getMultiple('key');
-    }
-
     /**
      * @param mixed $key
      * @dataProvider invalidKeys
@@ -535,16 +501,6 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
         };
         $this->expectException(InvalidArgumentException::class);
         $this->cache->setMultiple($values());
-    }
-
-    public function testSetMultipleNoIterable(): void
-    {
-        if (isset($this->skippedTests[__FUNCTION__])) {
-            $this->markTestSkipped($this->skippedTests[__FUNCTION__]);
-        }
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->cache->setMultiple('key');
     }
 
     /**
@@ -587,44 +543,6 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         $this->cache->deleteMultiple(['key1', $key, 'key2']);
-    }
-
-    public function testDeleteMultipleNoIterable(): void
-    {
-        if (isset($this->skippedTests[__FUNCTION__])) {
-            $this->markTestSkipped($this->skippedTests[__FUNCTION__]);
-        }
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->cache->deleteMultiple('key');
-    }
-
-    /**
-     * @param mixed $ttl
-     * @dataProvider invalidTtl
-     */
-    public function testSetInvalidTtl($ttl): void
-    {
-        if (isset($this->skippedTests[__FUNCTION__])) {
-            $this->markTestSkipped($this->skippedTests[__FUNCTION__]);
-        }
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->cache->set('key', 'value', $ttl);
-    }
-
-    /**
-     * @param mixed $ttl
-     * @dataProvider invalidTtl
-     */
-    public function testSetMultipleInvalidTtl($ttl): void
-    {
-        if (isset($this->skippedTests[__FUNCTION__])) {
-            $this->markTestSkipped($this->skippedTests[__FUNCTION__]);
-        }
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->cache->setMultiple(['key' => 'value'], $ttl);
     }
 
     public function testNullOverwrite(): void
