@@ -412,6 +412,7 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
 
         // Use a new pool instance to ensure that we don't hit any caches
         $pool = $this->createCachePool();
+        self::assertNotEquals($pool, $this->cache, 'New cache pools must not reference existing one.');
         $item = $pool->getItem('test_ttl_null');
 
         self::assertTrue($item->isHit(), 'Cache should have retrieved the items');
@@ -513,6 +514,7 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
         gc_collect_cycles();
 
         $cache = $this->createCachePool();
+        self::assertNotEquals($cache, $this->cache, 'New cache pools must not reference existing one.');
         self::assertTrue(
             $cache->getItem('key')->isHit(),
             'A deferred item should automatically be committed on CachePool::__destruct().'
