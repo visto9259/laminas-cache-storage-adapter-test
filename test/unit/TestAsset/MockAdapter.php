@@ -12,7 +12,7 @@ use Laminas\Cache\Storage\Adapter\AdapterOptions;
  */
 final class MockAdapter extends AbstractMetadataCapableAdapter
 {
-    /** @var array<string, mixed> */
+    /** @var array<string, array<string,mixed>> */
     private array $data = [];
 
     protected function internalGetItem(

@@ -6,8 +6,10 @@ namespace LaminasTestTest\Cache\Storage\Adapter;
 
 use Composer\InstalledVersions;
 use Laminas\Cache\Exception\RuntimeException;
+use Laminas\Cache\Storage\Adapter\AdapterOptions;
 use Laminas\Cache\Storage\Adapter\Apcu;
 use Laminas\Cache\Storage\Adapter\Memory;
+use Laminas\Cache\Storage\FlushableInterface;
 use Laminas\Cache\Storage\StorageInterface;
 
 use function assert;
@@ -19,12 +21,14 @@ final class AdapterForIntegrationTestDetector
     /**
      * @psalm-suppress MixedInferredReturnType Due to recursive dependencies, we can not have APCu installed as during
      *                                         development. Will be installed during CI via `.laminas-ci.json`.
+     * @return StorageInterface<AdapterOptions>&FlushableInterface
      */
-    public static function detect(): StorageInterface
+    public static function detect(): StorageInterface&FlushableInterface
     {
         if (InstalledVersions::isInstalled('laminas/laminas-cache-storage-adapter-apcu')) {
             assert(class_exists(Apcu::class));
             assert(is_a(Apcu::class, StorageInterface::class));
+            assert(is_a(Apcu::class, FlushableInterface::class));
             /**
              * @psalm-suppress MixedReturnStatement Due to recursive dependencies, we can not have APCu installed as
              *                                        during development. Will be installed during CI via
@@ -36,6 +40,7 @@ final class AdapterForIntegrationTestDetector
         if (InstalledVersions::isInstalled('laminas/laminas-cache-storage-adapter-memory')) {
             assert(class_exists(Memory::class));
             assert(is_a(Memory::class, StorageInterface::class));
+            assert(is_a(Memory::class, FlushableInterface::class));
             /**
              * @psalm-suppress MixedReturnStatement Due to recursive dependencies, we can not have Memory installed as
              *                                        during development. Will be installed during CI via

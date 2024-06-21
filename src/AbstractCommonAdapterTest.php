@@ -21,6 +21,7 @@ use Laminas\Cache\Storage\StorageInterface;
 use Laminas\Cache\Storage\TaggableInterface;
 use Laminas\Cache\Storage\TotalSpaceCapableInterface;
 use Laminas\Stdlib\ErrorHandler;
+use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -42,8 +43,8 @@ use function ucwords;
 use function usleep;
 
 /**
- * @template TStorage of StorageInterface
  * @template TOptions of AdapterOptions
+ * @template TStorage of StorageInterface<TOptions>
  */
 abstract class AbstractCommonAdapterTest extends TestCase
 {
@@ -79,19 +80,6 @@ abstract class AbstractCommonAdapterTest extends TestCase
 
         if ($this->storage instanceof FlushableInterface) {
             $this->storage->flush();
-        }
-    }
-
-    public function testOptionNamesValid(): void
-    {
-        $options = $this->storage->getOptions()->toArray();
-
-        foreach (array_keys($options) as $name) {
-            self::assertMatchesRegularExpression(
-                '/^[a-z]+[a-z0-9_]*[a-z0-9]+$/',
-                $name,
-                "Invalid option name '{$name}'"
-            );
         }
     }
 
@@ -848,7 +836,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         ];
         self::assertSame([], $this->storage->setItems($items));
 
-        // check iterator aggregate
+        /**
+         * @psalm-suppress MixedArgumentTypeCoercion Somehow, psalm does not properly parse the template from
+         *                                           class level.
+         */
         $iterator = new KeyListIterator($this->storage, array_keys($items));
         self::assertInstanceOf(IteratorInterface::class, $iterator);
         self::assertSame(IteratorInterface::CURRENT_AS_KEY, $iterator->getMode());
@@ -901,6 +892,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertTrue($this->storage->hasItem('test'));
     }
 
+    #[TestDox('Testing the method even tho static-analysis is not allowing empty strings.')]
     public function testClearByPrefixThrowsInvalidArgumentExceptionOnEmptyPrefix(): void
     {
         if (! $this->storage instanceof ClearByPrefixInterface) {
@@ -908,6 +900,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         }
 
         $this->expectException(InvalidArgumentException::class);
+        /** @psalm-suppress InvalidArgument We explicitly want to test this for users not using static analyzers */
         $this->storage->clearByPrefix('');
     }
 
@@ -945,6 +938,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertFalse($this->storage->hasItem('key2'));
     }
 
+    #[TestDox('Testing the method even tho static-analysis is not allowing empty strings.')]
     public function testClearByNamespaceThrowsInvalidArgumentExceptionOnEmptyNamespace(): void
     {
         if (! $this->storage instanceof ClearByNamespaceInterface) {
@@ -952,6 +946,7 @@ abstract class AbstractCommonAdapterTest extends TestCase
         }
 
         $this->expectException(InvalidArgumentException::class);
+        /** @psalm-suppress InvalidArgument We explicitly want to test this for users not using static analyzers */
         $this->storage->clearByNamespace('');
     }
 

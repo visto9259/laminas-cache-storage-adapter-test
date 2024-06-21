@@ -4,9 +4,16 @@ declare(strict_types=1);
 
 namespace LaminasTestTest\Cache\Storage\Adapter;
 
+use Laminas\Cache\Storage\Adapter\AdapterOptions;
+use Laminas\Cache\Storage\FlushableInterface;
 use Laminas\Cache\Storage\StorageInterface;
 use LaminasTest\Cache\Storage\Adapter\AbstractCacheItemPoolIntegrationTest;
 
+/**
+ * @uses FlushableInterface
+ *
+ * @template-extends AbstractCacheItemPoolIntegrationTest<AdapterOptions>
+ */
 final class CacheItemPoolIntegrationTestTest extends AbstractCacheItemPoolIntegrationTest
 {
     protected function setUp(): void
@@ -18,7 +25,7 @@ final class CacheItemPoolIntegrationTestTest extends AbstractCacheItemPoolIntegr
         parent::setUp();
     }
 
-    protected function createStorage(): StorageInterface
+    protected function createStorage(): StorageInterface&FlushableInterface
     {
         return AdapterForIntegrationTestDetector::detect();
     }
