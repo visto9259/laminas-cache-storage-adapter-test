@@ -6,6 +6,7 @@ namespace LaminasTest\Cache\Storage\Adapter;
 
 use DateTimeImmutable;
 use Laminas\Cache\Psr\CacheItemPool\CacheItemPoolDecorator;
+use Laminas\Cache\Storage\Adapter\AdapterOptions;
 use Laminas\Cache\Storage\FlushableInterface;
 use Laminas\Cache\Storage\StorageInterface;
 use PHPUnit\Framework\TestCase;
@@ -34,12 +35,15 @@ use function time;
 /**
  * NOTE: Most tests in here are imported from https://github.com/php-cache/integration-tests
  *       cache/integration-tests is licensed with the MIT License.
+ *
+ * @template TOptions of AdapterOptions
  */
 abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
 {
     /** @var non-empty-string|null */
     private ?string $tz = null;
 
+    /** @var (StorageInterface<TOptions>&FlushableInterface)|null */
     private ?StorageInterface $storage = null;
 
     /**
@@ -66,18 +70,18 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
             date_default_timezone_set($this->tz);
         }
 
-        if ($this->storage instanceof FlushableInterface) {
+        if ($this->storage !== null) {
             $this->storage->flush();
         }
-
-        if ($this->cache !== null) {
-            $this->cache->clear();
-        }
+        $this->cache->clear();
 
         parent::tearDown();
     }
 
-    abstract protected function createStorage(): StorageInterface;
+    /**
+     * @return StorageInterface<TOptions>&FlushableInterface
+     */
+    abstract protected function createStorage(): StorageInterface&FlushableInterface;
 
     public function createCachePool(): CacheItemPoolInterface
     {

@@ -11,6 +11,7 @@ use Laminas\Cache\Storage\Event;
 use PHPUnit\Framework\TestCase;
 use ReflectionObject;
 
+use function array_keys;
 use function func_get_args;
 
 /**
@@ -170,5 +171,18 @@ abstract class AbstractAdapterOptionsTest extends TestCase
             'WriTAble'    => false,
             'KEY_paTTern' => '/./',
         ]));
+    }
+
+    public function testOptionNamesValid(): void
+    {
+        $options = $this->options->toArray();
+
+        foreach (array_keys($options) as $name) {
+            self::assertMatchesRegularExpression(
+                '/^[a-z]+[a-z0-9_]*[a-z0-9]+$/',
+                $name,
+                "Invalid option name '{$name}'"
+            );
+        }
     }
 }
