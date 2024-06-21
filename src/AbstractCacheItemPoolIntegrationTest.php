@@ -53,7 +53,7 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
      */
     protected array $skippedTests = [];
 
-    protected ?CacheItemPoolInterface $cache;
+    protected ?CacheItemPoolInterface $cache = null;
 
     protected function setUp(): void
     {
@@ -73,7 +73,10 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
         if ($this->storage !== null) {
             $this->storage->flush();
         }
-        $this->cache->clear();
+
+        if ($this->cache !== null) {
+            $this->cache->clear();
+        }
 
         parent::tearDown();
     }
