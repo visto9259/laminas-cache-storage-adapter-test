@@ -48,6 +48,8 @@ use function usleep;
  */
 abstract class AbstractCommonAdapterTest extends TestCase
 {
+    use ClockTrait;
+
     /** @var TStorage */
     protected StorageInterface $storage;
 
@@ -196,10 +198,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertTrue($this->storage->setItem('key', 'value'));
 
         // wait until the item expired
-        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
-        usleep($wait);
+        $this->advanceTime($wait);
 
         if (! $capabilities->usesRequestTime) {
             self::assertFalse($this->storage->hasItem('key'));
@@ -275,10 +277,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $this->storage->setItem('key', 'value');
 
         // wait until expired
-        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
-        usleep($wait);
+        $this->advanceTime($wait);
 
         self::assertNull($this->storage->getItem('key'));
     }
@@ -525,10 +527,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $this->storage->setItem('key', 'value');
 
         // wait until expired
-        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
-        usleep($wait);
+        $this->advanceTime($wait);
 
         if ($capabilities->usesRequestTime) {
             // Can't test much more if the request time will be used
@@ -571,10 +573,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertSame([], $this->storage->setItems($itemsLow));
 
         // wait until expired
-        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
-        usleep($wait);
+        $this->advanceTime($wait);
 
         $rs = $this->storage->getItems(array_keys($items));
         ksort($rs); // make comparable
@@ -692,10 +694,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertTrue($this->storage->addItem('key', 'value'));
 
         // wait until the item expired
-        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
-        usleep($wait);
+        $this->advanceTime($wait);
 
         if (! $capabilities->usesRequestTime) {
             self::assertFalse($this->storage->hasItem('key'));
@@ -775,24 +777,24 @@ abstract class AbstractCommonAdapterTest extends TestCase
         $this->options->setTtl(2 * $capabilities->ttlPrecision);
 
         $this->waitForFullSecond();
-        $waitInitial = (int) ($capabilities->ttlPrecision * 1000000);
+        $waitInitial = (int) $capabilities->ttlPrecision;
         self::assertGreaterThanOrEqual(0, $waitInitial);
         assert($waitInitial >= 0);
 
         self::assertTrue($this->storage->setItem('key', 'value'));
 
         // sleep 1 times before expire to touch the item
-        usleep($waitInitial);
+        $this->advanceTime($waitInitial);
         self::assertTrue($this->storage->touchItem('key'));
 
-        usleep($waitInitial);
+        $this->advanceTime($waitInitial);
         self::assertTrue($this->storage->hasItem('key'));
 
         if (! $capabilities->usesRequestTime) {
-            $waitExtended = (int) ($capabilities->ttlPrecision * 2000000);
+            $waitExtended = (int) ($capabilities->ttlPrecision * 2);
             self::assertGreaterThanOrEqual(0, $waitExtended);
             assert($waitExtended >= 0);
-            usleep($waitExtended);
+            $this->advanceTime($waitExtended);
             self::assertFalse($this->storage->hasItem('key'));
         }
     }
@@ -965,10 +967,10 @@ abstract class AbstractCommonAdapterTest extends TestCase
         self::assertTrue($this->storage->setItem('key1', 'value1'));
 
         // wait until the first item expired
-        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2000000);
+        $wait = (int) ($ttl + $capabilities->ttlPrecision * 2);
         self::assertGreaterThanOrEqual(0, $wait);
         assert($wait >= 0);
-        usleep($wait);
+        $this->advanceTime($wait);
 
         self::assertTrue($this->storage->setItem('key2', 'value2'));
 

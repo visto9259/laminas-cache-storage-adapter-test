@@ -24,7 +24,6 @@ use function is_float;
 use function is_int;
 use function is_object;
 use function is_string;
-use function sleep;
 use function sort;
 use function str_repeat;
 
@@ -34,6 +33,8 @@ use function str_repeat;
  */
 abstract class AbstractSimpleCacheIntegrationTest extends TestCase
 {
+    use ClockTrait;
+
     /** @var non-empty-string|null */
     private ?string $tz = null;
 
@@ -75,22 +76,7 @@ abstract class AbstractSimpleCacheIntegrationTest extends TestCase
     public function createSimpleCache(): CacheInterface
     {
         $this->storage = $this->createStorage();
-        return new SimpleCacheDecorator($this->storage);
-    }
-
-    /**
-     * Advance time perceived by the cache for the purposes of testing TTL.
-     *
-     * The default implementation sleeps for the specified duration,
-     * but subclasses are encouraged to override this,
-     * adjusting a mocked time possibly set up in {@link createSimpleCache()},
-     * to speed up the tests.
-     *
-     * @param 0|positive-int $seconds
-     */
-    protected function advanceTime(int $seconds): void
-    {
-        sleep($seconds);
+        return new SimpleCacheDecorator($this->storage, $this->getClock());
     }
 
     /**
