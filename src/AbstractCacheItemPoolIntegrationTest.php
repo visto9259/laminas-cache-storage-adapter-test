@@ -28,7 +28,6 @@ use function is_int;
 use function is_object;
 use function is_string;
 use function iterator_to_array;
-use function sleep;
 use function str_repeat;
 use function time;
 
@@ -40,6 +39,8 @@ use function time;
  */
 abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
 {
+    use ClockTrait;
+
     /** @var non-empty-string|null */
     private ?string $tz = null;
 
@@ -89,7 +90,7 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
     public function createCachePool(): CacheItemPoolInterface
     {
         $this->storage = $this->createStorage();
-        return new CacheItemPoolDecorator($this->storage);
+        return new CacheItemPoolDecorator($this->storage, $this->getClock());
     }
 
     /**
@@ -572,7 +573,7 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
         $item->expiresAfter(2);
         $this->cache->save($item);
 
-        sleep(3);
+        $this->advanceTime(3);
         $item = $this->cache->getItem('key');
         self::assertFalse($item->isHit());
         self::assertNull($item->get(), "Item's value must be null when isHit() is false.");
@@ -1001,7 +1002,7 @@ abstract class AbstractCacheItemPoolIntegrationTest extends TestCase
         $item->expiresAfter(2);
         $this->cache->saveDeferred($item);
 
-        sleep(3);
+        $this->advanceTime(3);
         self::assertFalse($this->cache->hasItem('key'));
     }
 }
